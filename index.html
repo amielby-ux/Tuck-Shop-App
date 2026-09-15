@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#0b0b0b" />
+  <meta name="description" content="TuckStock - simple stock taking and sales tracking for tuckshops." />
+  <link rel="manifest" href="./manifest.webmanifest" />
+  <title>TuckStock V1</title>
+  <style>
+    :root{
+      --bg:#0b0b0b; --panel:#151515; --panel2:#1d1d1d; --line:#2a2a2a;
+      --text:#f7f3e8; --muted:#a9a9a9; --gold:#f5c542; --gold2:#d8a622;
+      --danger:#ff6b6b; --ok:#74d680; --radius:22px;
+    }
+    *{box-sizing:border-box}
+    html,body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+    body{min-height:100vh}
+    button,input,select{font:inherit}
+    button{cursor:pointer}
+    .app{max-width:720px;margin:0 auto;padding:18px 16px 104px}
+    .topbar{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px}
+    .brand{display:flex;align-items:center;gap:12px}
+    .logo{width:42px;height:42px;border-radius:14px;background:linear-gradient(145deg,var(--gold),var(--gold2));color:#0b0b0b;display:grid;place-items:center;font-weight:900;font-size:20px}
+    .brand h1{font-size:20px;margin:0}.brand p{margin:2px 0 0;color:var(--muted);font-size:12px}
+    .iconbtn{border:1px solid var(--line);background:var(--panel);color:var(--text);border-radius:14px;min-width:44px;min-height:44px}
+    .hero{background:linear-gradient(180deg,#171717,#101010);border:1px solid var(--line);border-radius:28px;padding:18px;margin-bottom:14px}
+    .eyebrow{font-size:12px;text-transform:uppercase;letter-spacing:.12em;color:var(--gold);font-weight:800}
+    .hero-row{display:grid;grid-template-columns:1.4fr .8fr .8fr;gap:10px;margin-top:12px}
+    .metric{background:var(--panel2);border:1px solid var(--line);border-radius:18px;padding:13px;min-width:0}
+    .metric strong{display:block;font-size:24px;line-height:1.05}.metric span{display:block;font-size:11px;color:var(--muted);margin-top:5px}
+    .metric.main{background:linear-gradient(145deg,#f5c542,#d8a622);color:#0b0b0b;border:none}.metric.main span{color:#2b2410}
+    .section-title{display:flex;justify-content:space-between;align-items:end;margin:20px 2px 10px}.section-title h2{font-size:16px;margin:0}.section-title span{font-size:12px;color:var(--muted)}
+    .actions{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+    .action{border:1px solid var(--line);background:var(--panel);color:var(--text);border-radius:20px;padding:16px;text-align:left;min-height:112px}
+    .action.primary{background:linear-gradient(145deg,#f5c542,#d8a622);color:#0b0b0b;border:none}
+    .action .ico{font-size:24px}.action b{display:block;margin-top:12px;font-size:16px}.action small{display:block;margin-top:4px;color:var(--muted)}.action.primary small{color:#3a2f0f}
+    .list{display:flex;flex-direction:column;gap:9px}
+    .row{border:1px solid var(--line);background:var(--panel);border-radius:18px;padding:13px;display:flex;justify-content:space-between;align-items:center;gap:10px}
+    .row .meta{min-width:0}.row .name{font-weight:750;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.row .sub{font-size:12px;color:var(--muted);margin-top:3px}.qty{font-weight:850}.low{color:var(--danger)}
+    .nav{position:fixed;left:50%;bottom:14px;transform:translateX(-50%);width:min(690px,calc(100% - 22px));background:rgba(20,20,20,.96);border:1px solid var(--line);border-radius:22px;padding:8px;display:grid;grid-template-columns:repeat(4,1fr);gap:4px;z-index:40;backdrop-filter:blur(16px)}
+    .nav button{background:transparent;border:0;color:var(--muted);border-radius:14px;padding:8px 4px;font-size:11px;min-height:50px}.nav button.active{background:#272727;color:var(--gold)}.nav .nicon{display:block;font-size:18px;margin-bottom:3px}
+    .screen{display:none}.screen.active{display:block}
+    .toolbar{display:flex;gap:8px;margin:12px 0}.search{flex:1;border:1px solid var(--line);background:var(--panel);color:var(--text);border-radius:14px;padding:12px 14px;min-height:46px}.btn{border:0;border-radius:14px;padding:12px 14px;font-weight:800;min-height:46px}.btn.gold{background:var(--gold);color:#0b0b0b}.btn.dark{background:var(--panel2);color:var(--text);border:1px solid var(--line)}.btn.danger{background:#331919;color:#ffb3b3;border:1px solid #522626}.btn.full{width:100%}
+    .products-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+    .product-card{border:1px solid var(--line);background:var(--panel);border-radius:20px;padding:14px;text-align:left;color:var(--text);min-height:116px}.product-card .emoji{font-size:24px}.product-card b{display:block;margin-top:10px}.product-card .price{color:var(--gold);font-weight:850;margin-top:4px}.product-card .stock{font-size:11px;color:var(--muted);margin-top:3px}
+    .basketbar{position:sticky;bottom:86px;margin-top:14px;background:var(--gold);color:#0b0b0b;border-radius:18px;padding:12px 14px;display:flex;justify-content:space-between;align-items:center;gap:10px;box-shadow:0 10px 30px rgba(0,0,0,.28)}
+    .basketbar.hidden{display:none}.basketbar button{background:#111;color:#fff;border:0;border-radius:12px;padding:10px 12px;font-weight:800}
+    .sheet{position:fixed;inset:0;display:none;align-items:flex-end;background:rgba(0,0,0,.62);z-index:70;padding:12px}.sheet.open{display:flex}.sheet-card{width:min(720px,100%);margin:0 auto;background:#111;border:1px solid var(--line);border-radius:26px;padding:16px;max-height:86vh;overflow:auto}.sheet-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}.sheet-head h3{margin:0}.close{background:var(--panel2);border:1px solid var(--line);color:var(--text);width:42px;height:42px;border-radius:13px}
+    .form{display:grid;gap:10px}.field label{display:block;font-size:12px;color:var(--muted);margin-bottom:5px}.field input,.field select{width:100%;border:1px solid var(--line);background:var(--panel);color:var(--text);border-radius:14px;padding:12px 13px;min-height:46px}.form2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+    .basket-item{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;border-bottom:1px solid var(--line);padding:12px 0}.basket-item:last-child{border-bottom:0}.counter{display:flex;align-items:center;gap:8px}.counter button{width:34px;height:34px;border-radius:10px;border:1px solid var(--line);background:var(--panel2);color:var(--text)}.total{display:flex;justify-content:space-between;align-items:center;padding:14px 0;font-size:20px;font-weight:900}
+    .notice{border:1px dashed #5f5220;background:#1b180d;color:#f5df8a;border-radius:16px;padding:12px;font-size:12px;line-height:1.45;margin:10px 0}
+    .toast{position:fixed;top:16px;left:50%;transform:translateX(-50%) translateY(-140%);background:#f1f1f1;color:#111;padding:11px 14px;border-radius:12px;font-weight:750;z-index:100;transition:.25s;max-width:calc(100% - 28px);text-align:center}.toast.show{transform:translateX(-50%) translateY(0)}
+    .empty{border:1px dashed var(--line);border-radius:18px;padding:20px;text-align:center;color:var(--muted)}
+    .seg{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;background:var(--panel);padding:5px;border-radius:14px;border:1px solid var(--line);margin-bottom:12px}.seg button{border:0;border-radius:10px;background:transparent;color:var(--muted);padding:9px 5px;font-size:12px}.seg button.active{background:var(--panel2);color:var(--gold)}
+    @media(max-width:430px){.hero-row{grid-template-columns:1.2fr .8fr}.hero-row .metric:last-child{grid-column:1/-1}.metric strong{font-size:22px}.actions{grid-template-columns:1fr 1fr}.product-card{min-height:112px}.form2{grid-template-columns:1fr}}
+  </style>
+</head>
+<body>
+  <div class="toast" id="toast" aria-live="polite"></div>
+  <main class="app">
+    <section id="home" class="screen active">
+      <div class="topbar">
+        <div class="brand"><div class="logo">TS</div><div><h1>TuckStock</h1><p>Simple stock. Clear business.</p></div></div>
+        <button class="iconbtn" id="resetDemoBtn" title="Reset demo">↻</button>
+      </div>
+      <div class="hero">
+        <div class="eyebrow">My shop today</div>
+        <div class="hero-row">
+          <div class="metric main"><strong id="todaySales">R0</strong><span>Sales today</span></div>
+          <div class="metric"><strong id="unitsSold">0</strong><span>Units sold</span></div>
+          <div class="metric"><strong id="lowCount">0</strong><span>Low stock</span></div>
+        </div>
+      </div>
+      <div class="section-title"><h2>What are you doing?</h2><span>Tap to start</span></div>
+      <div class="actions">
+        <button class="action primary" data-go="sales"><span class="ico">🛒</span><b>New Sale</b><small>Mix products in one basket</small></button>
+        <button class="action" id="openStockIn"><span class="ico">📦</span><b>Stock In</b><small>Received or made today</small></button>
+        <button class="action" data-go="count"><span class="ico">📋</span><b>Stock Count</b><small>Check what is actually left</small></button>
+        <button class="action" data-go="products"><span class="ico">＋</span><b>Products</b><small>Add or edit products</small></button>
+      </div>
+      <div class="section-title"><h2>Low stock</h2><span id="lowSubtitle"></span></div>
+      <div id="lowStockList" class="list"></div>
+    </section>
+
+    <section id="sales" class="screen">
+      <div class="topbar"><div class="brand"><div class="logo">🛒</div><div><h1>New Sale</h1><p>Tap products or scan a barcode</p></div></div><button class="iconbtn" id="scanBtn" title="Scan barcode">▣</button></div>
+      <div class="toolbar"><input id="saleSearch" class="search" placeholder="Search product…" /><button class="btn dark" id="openBasketBtn">Basket</button></div>
+      <div class="seg"><button class="active" data-filter="all">All</button><button data-filter="loose">Loose</button><button data-filter="packaged">Packaged</button></div>
+      <div id="saleProducts" class="products-grid"></div>
+      <div id="basketBar" class="basketbar hidden"><div><b id="basketSummary">0 items</b><div id="basketTotalSmall">R0</div></div><button id="reviewBasketBtn">Review sale</button></div>
+    </section>
+
+    <section id="products" class="screen">
+      <div class="topbar"><div class="brand"><div class="logo">＋</div><div><h1>Products</h1><p>Manual or barcode-ready setup</p></div></div><button class="btn gold" id="addProductBtn">Add</button></div>
+      <div class="toolbar"><input id="productSearch" class="search" placeholder="Search products…" /></div>
+      <div id="productList" class="list"></div>
+    </section>
+
+    <section id="count" class="screen">
+      <div class="topbar"><div class="brand"><div class="logo">📋</div><div><h1>Stock Count</h1><p>Expected versus actual</p></div></div><button class="btn gold" id="saveCountBtn">Save count</button></div>
+      <div class="notice">Enter what you physically count. Differences help reveal breakages, personal use, theft, or counting mistakes.</div>
+      <div id="countList" class="list"></div>
+    </section>
+
+    <section id="history" class="screen">
+      <div class="topbar"><div class="brand"><div class="logo">🧾</div><div><h1>History</h1><p>Completed sales and stock movements</p></div></div></div>
+      <div id="historyList" class="list"></div>
+    </section>
+  </main>
+
+  <nav class="nav" aria-label="Main navigation">
+    <button class="active" data-go="home"><span class="nicon">⌂</span>Home</button>
+    <button data-go="sales"><span class="nicon">🛒</span>Sale</button>
+    <button data-go="products"><span class="nicon">▦</span>Products</button>
+    <button data-go="history"><span class="nicon">🧾</span>History</button>
+  </nav>
+
+  <div class="sheet" id="basketSheet"><div class="sheet-card"><div class="sheet-head"><h3>Customer basket</h3><button class="close" data-close="basketSheet">×</button></div><div id="basketItems"></div><div class="total"><span>Total</span><span id="basketTotal">R0</span></div><button class="btn gold full" id="completeSaleBtn">Complete Sale</button></div></div>
+
+  <div class="sheet" id="productSheet"><div class="sheet-card"><div class="sheet-head"><h3 id="productSheetTitle">Add product</h3><button class="close" data-close="productSheet">×</button></div>
+    <form id="productForm" class="form">
+      <input type="hidden" id="productId" />
+      <div class="field"><label>Product name</label><input id="pName" required placeholder="e.g. Amagwinya" /></div>
+      <div class="form2"><div class="field"><label>How is it sold?</label><select id="pType"><option value="loose">Loose / individual</option><option value="prepared">Made / prepared here</option><option value="packaged">Packaged item</option></select></div><div class="field"><label>Category</label><input id="pCategory" placeholder="e.g. Snacks" /></div></div>
+      <div class="form2"><div class="field"><label>Selling price (R)</label><input id="pPrice" type="number" step="0.01" min="0" required /></div><div class="field"><label>Cost price per unit (R)</label><input id="pCost" type="number" step="0.01" min="0" /></div></div>
+      <div class="form2"><div class="field"><label>Starting quantity</label><input id="pQty" type="number" step="1" min="0" required /></div><div class="field"><label>Low-stock level</label><input id="pLow" type="number" step="1" min="0" value="5" /></div></div>
+      <div class="field"><label>Barcode (optional)</label><div class="toolbar" style="margin:0"><input id="pBarcode" class="search" inputmode="numeric" placeholder="Scan or type barcode" /><button type="button" class="btn dark" id="scanIntoProductBtn">Scan</button></div></div>
+      <button class="btn gold full" type="submit">Save Product</button>
+      <button class="btn danger full" type="button" id="deleteProductBtn" style="display:none">Delete Product</button>
+    </form>
+  </div></div>
+
+  <div class="sheet" id="stockInSheet"><div class="sheet-card"><div class="sheet-head"><h3>Stock In</h3><button class="close" data-close="stockInSheet">×</button></div>
+    <form id="stockInForm" class="form">
+      <div class="field"><label>Product</label><select id="siProduct"></select></div>
+      <div class="field"><label id="siQtyLabel">Quantity added</label><input id="siQty" type="number" min="1" step="1" value="1" required /></div>
+      <div class="notice" id="stockInHint">Use this when you receive stock or prepare items for sale today.</div>
+      <button class="btn gold full" type="submit">Add to Stock</button>
+    </form>
+  </div></div>
+
+  <div class="sheet" id="scanSheet"><div class="sheet-card"><div class="sheet-head"><h3>Barcode Scanner</h3><button class="close" data-close="scanSheet">×</button></div>
+    <video id="scanVideo" playsinline style="width:100%;border-radius:18px;background:#000;min-height:180px"></video>
+    <div class="notice" id="scanStatus">Point the camera at a barcode. If camera scanning is not supported, type the barcode below.</div>
+    <div class="toolbar"><input id="manualBarcode" class="search" inputmode="numeric" placeholder="Type barcode" /><button class="btn gold" id="useBarcodeBtn">Use</button></div>
+  </div></div>
+
+  <script>
+    const KEY='tuckstock-v1-state';
+    const demoProducts=[
+      {id:'p1',name:'Amagwinya',type:'prepared',category:'Food',price:5,cost:2,qty:18,low:5,barcode:'',emoji:'🥯'},
+      {id:'p2',name:'Loose Sweets',type:'loose',category:'Sweets',price:1,cost:.5,qty:100,low:20,barcode:'',emoji:'🍬'},
+      {id:'p3',name:'Cigarettes',type:'loose',category:'Tobacco',price:3,cost:2,qty:20,low:5,barcode:'',emoji:'◻️'},
+      {id:'p4',name:'Bread',type:'packaged',category:'Grocery',price:18,cost:14,qty:12,low:3,barcode:'6001007003765',emoji:'🍞'},
+      {id:'p5',name:'Energy Drink',type:'packaged',category:'Drinks',price:15,cost:10,qty:24,low:6,barcode:'6009801167227',emoji:'⚡'}
+    ];
+    const demoState=()=>({products:structuredClone(demoProducts),sales:[],movements:[],basket:{},counts:[],createdAt:Date.now()});
+    let state=load(); let saleFilter='all'; let scanTarget='sale'; let scanStream=null; let scanTimer=null;
+    function load(){try{return JSON.parse(localStorage.getItem(KEY))||demoState()}catch{return demoState()}}
+    function save(){localStorage.setItem(KEY,JSON.stringify(state));renderAll()}
+    function money(n){return new Intl.NumberFormat('en-ZA',{style:'currency',currency:'ZAR',maximumFractionDigits:2}).format(Number(n)||0)}
+    function todayKey(){const d=new Date(); return [d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.getDate()).padStart(2,'0')].join('-')}
+    function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),1800)}
+    function go(id){document.querySelectorAll('.screen').forEach(s=>s.classList.toggle('active',s.id===id));document.querySelectorAll('[data-go]').forEach(b=>b.classList.toggle('active',b.dataset.go===id&&b.closest('.nav')));window.scrollTo({top:0,behavior:'smooth'});renderAll()}
+    document.querySelectorAll('[data-go]').forEach(b=>b.addEventListener('click',()=>go(b.dataset.go)));
+    document.querySelectorAll('[data-close]').forEach(b=>b.addEventListener('click',()=>closeSheet(b.dataset.close)));
+    function openSheet(id){document.getElementById(id).classList.add('open')}
+    function closeSheet(id){document.getElementById(id).classList.remove('open'); if(id==='scanSheet') stopScanner()}
+    document.querySelectorAll('.sheet').forEach(s=>s.addEventListener('click',e=>{if(e.target===s)closeSheet(s.id)}));
+
+    function renderHome(){
+      const tk=todayKey(); const sales=state.sales.filter(s=>s.day===tk); const total=sales.reduce((a,s)=>a+s.total,0); const units=sales.reduce((a,s)=>a+s.items.reduce((x,i)=>x+i.qty,0),0); const low=state.products.filter(p=>p.qty<=p.low);
+      todaySales.textContent=money(total); unitsSold.textContent=units; lowCount.textContent=low.length; lowSubtitle.textContent=low.length?`${low.length} need attention`:'All good';
+      lowStockList.innerHTML=low.length?low.map(p=>`<div class="row"><div class="meta"><div class="name">${esc(p.name)}</div><div class="sub">Reorder at ${p.low}</div></div><div class="qty low">${p.qty} left</div></div>`).join(''):'<div class="empty">No products are below their low-stock level.</div>';
+    }
+    function renderSaleProducts(){const q=saleSearch.value.trim().toLowerCase();const ps=state.products.filter(p=>(saleFilter==='all'||p.type===saleFilter||(saleFilter==='loose'&&p.type==='prepared'))&&p.name.toLowerCase().includes(q));saleProducts.innerHTML=ps.length?ps.map(p=>`<button class="product-card" data-add="${p.id}" ${p.qty<=0?'disabled':''}><span class="emoji">${p.emoji||'📦'}</span><b>${esc(p.name)}</b><div class="price">${money(p.price)}</div><div class="stock ${p.qty<=p.low?'low':''}">${p.qty} left</div></button>`).join(''):'<div class="empty" style="grid-column:1/-1">No matching products.</div>';document.querySelectorAll('[data-add]').forEach(b=>b.addEventListener('click',()=>addToBasket(b.dataset.add,1)))}
+    function addToBasket(id,n){const p=state.products.find(x=>x.id===id); if(!p||p.qty<=0)return; const cur=state.basket[id]||0; state.basket[id]=Math.min(p.qty,cur+n); saveBasketOnly();toast(`${p.name} added`)}
+    function saveBasketOnly(){localStorage.setItem(KEY,JSON.stringify(state));renderBasket();renderSaleProducts()}
+    function basketEntries(){return Object.entries(state.basket).map(([id,qty])=>({p:state.products.find(x=>x.id===id),qty})).filter(x=>x.p&&x.qty>0)}
+    function renderBasket(){const es=basketEntries();const count=es.reduce((a,x)=>a+x.qty,0);const total=es.reduce((a,x)=>a+x.qty*x.p.price,0);basketBar.classList.toggle('hidden',count===0);basketSummary.textContent=`${count} item${count===1?'':'s'}`;basketTotalSmall.textContent=money(total);basketTotal.textContent=money(total);basketItems.innerHTML=es.length?es.map(x=>`<div class="basket-item"><div><b>${esc(x.p.name)}</b><div class="sub">${money(x.p.price)} each · ${money(x.qty*x.p.price)}</div></div><div class="counter"><button data-dec="${x.p.id}">−</button><b>${x.qty}</b><button data-inc="${x.p.id}">+</button></div></div>`).join(''):'<div class="empty">Basket is empty.</div>';document.querySelectorAll('[data-dec]').forEach(b=>b.addEventListener('click',()=>changeBasket(b.dataset.dec,-1)));document.querySelectorAll('[data-inc]').forEach(b=>b.addEventListener('click',()=>changeBasket(b.dataset.inc,1)))}
+    function changeBasket(id,d){const p=state.products.find(x=>x.id===id);const n=(state.basket[id]||0)+d;if(n<=0)delete state.basket[id];else state.basket[id]=Math.min(p.qty,n);saveBasketOnly()}
+    function completeSale(){const es=basketEntries(); if(!es.length){toast('Basket is empty');return} if(es.some(x=>x.qty>x.p.qty)){toast('Not enough stock for one or more items');return} const items=es.map(x=>({productId:x.p.id,name:x.p.name,qty:x.qty,price:x.p.price,cost:x.p.cost||0}));const total=items.reduce((a,i)=>a+i.qty*i.price,0);const now=Date.now();items.forEach(i=>{const p=state.products.find(x=>x.id===i.productId);p.qty-=i.qty;state.movements.unshift({id:uid(),type:'sale',productId:p.id,name:p.name,qty:-i.qty,at:now})});state.sales.unshift({id:uid(),day:todayKey(),at:now,total,items});state.basket={};save();closeSheet('basketSheet');go('home');toast(`Sale completed · ${money(total)}`)}
+
+    function renderProducts(){const q=productSearch.value.trim().toLowerCase();const ps=state.products.filter(p=>p.name.toLowerCase().includes(q));productList.innerHTML=ps.length?ps.map(p=>`<button class="row" data-edit="${p.id}" style="width:100%;color:inherit;text-align:left"><div class="meta"><div class="name">${p.emoji||'📦'} ${esc(p.name)}</div><div class="sub">${labelType(p.type)} · ${money(p.price)}${p.barcode?' · '+esc(p.barcode):''}</div></div><div class="qty ${p.qty<=p.low?'low':''}">${p.qty}</div></button>`).join(''):'<div class="empty">No products yet.</div>';document.querySelectorAll('[data-edit]').forEach(b=>b.addEventListener('click',()=>openProduct(b.dataset.edit)))}
+    function labelType(t){return t==='prepared'?'Made here':t==='packaged'?'Packaged':'Loose'}
+    function openProduct(id=''){const p=state.products.find(x=>x.id===id);productSheetTitle.textContent=p?'Edit product':'Add product';productId.value=p?.id||'';pName.value=p?.name||'';pType.value=p?.type||'loose';pCategory.value=p?.category||'';pPrice.value=p?.price??'';pCost.value=p?.cost??'';pQty.value=p?.qty??0;pLow.value=p?.low??5;pBarcode.value=p?.barcode||'';deleteProductBtn.style.display=p?'block':'none';openSheet('productSheet')}
+    function esc(s){return String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]))}
+    productForm.addEventListener('submit',e=>{e.preventDefault();const id=productId.value;const obj={id:id||uid(),name:pName.value.trim(),type:pType.value,category:pCategory.value.trim(),price:Number(pPrice.value),cost:Number(pCost.value)||0,qty:Math.max(0,parseInt(pQty.value||0)),low:Math.max(0,parseInt(pLow.value||0)),barcode:pBarcode.value.trim(),emoji:pickEmoji(pCategory.value,pType.value)};if(!obj.name||Number.isNaN(obj.price)){toast('Enter a product name and price');return}const dupe=state.products.find(p=>p.barcode&&obj.barcode&&p.barcode===obj.barcode&&p.id!==id);if(dupe){toast('That barcode is already linked to another product');return}if(id){state.products[state.products.findIndex(p=>p.id===id)]={...state.products.find(p=>p.id===id),...obj}}else state.products.push(obj);state.movements.unshift({id:uid(),type:id?'edit_product':'add_product',name:obj.name,qty:0,at:Date.now()});save();closeSheet('productSheet');toast(id?'Product updated':'Product added')});
+    deleteProductBtn.addEventListener('click',()=>{const id=productId.value;const p=state.products.find(x=>x.id===id);if(!p)return;if(!confirm(`Delete ${p.name}?`))return;state.products=state.products.filter(x=>x.id!==id);delete state.basket[id];save();closeSheet('productSheet');toast('Product deleted')});
+    function pickEmoji(cat,type){const c=cat.toLowerCase();if(type==='prepared')return'🥯';if(c.includes('drink'))return'🥤';if(c.includes('sweet'))return'🍬';if(c.includes('bread')||c.includes('grocery'))return'🍞';return'📦'}
+
+    function renderStockInOptions(){siProduct.innerHTML=state.products.map(p=>`<option value="${p.id}">${esc(p.name)} · ${p.qty} in stock</option>`).join('');updateStockInHint()}
+    function updateStockInHint(){const p=state.products.find(x=>x.id===siProduct.value);if(!p)return;siQtyLabel.textContent=p.type==='prepared'?'Quantity made / prepared':'Quantity received';stockInHint.textContent=p.type==='prepared'?'Use this for today’s fresh batch. The quantity will be added to available stock.':'Use this when new stock arrives from a supplier.'}
+    stockInForm.addEventListener('submit',e=>{e.preventDefault();const p=state.products.find(x=>x.id===siProduct.value);const q=parseInt(siQty.value);if(!p||!q||q<1)return;p.qty+=q;state.movements.unshift({id:uid(),type:'stock_in',productId:p.id,name:p.name,qty:q,at:Date.now()});save();closeSheet('stockInSheet');toast(`${q} ${p.name} added`)});
+
+    function renderCount(){countList.innerHTML=state.products.map(p=>`<div class="row"><div class="meta"><div class="name">${esc(p.name)}</div><div class="sub">Expected: ${p.qty}</div></div><input data-count="${p.id}" type="number" min="0" step="1" value="${p.qty}" style="width:86px;background:#1d1d1d;color:#fff;border:1px solid #2a2a2a;border-radius:12px;padding:10px;text-align:center" /></div>`).join('')}
+    saveCountBtn.addEventListener('click',()=>{const now=Date.now();let diffs=0;document.querySelectorAll('[data-count]').forEach(inp=>{const p=state.products.find(x=>x.id===inp.dataset.count);const actual=Math.max(0,parseInt(inp.value||0));const diff=actual-p.qty;if(diff!==0)diffs++;state.counts.unshift({id:uid(),productId:p.id,name:p.name,expected:p.qty,actual,diff,at:now});if(diff!==0)state.movements.unshift({id:uid(),type:'count_adjustment',productId:p.id,name:p.name,qty:diff,at:now});p.qty=actual});save();go('home');toast(diffs?`Count saved · ${diffs} difference${diffs===1?'':'s'}`:'Count saved · no differences')});
+
+    function renderHistory(){const sales=state.sales.map(s=>({at:s.at,html:`<div class="row"><div class="meta"><div class="name">Sale · ${s.items.reduce((a,i)=>a+i.qty,0)} items</div><div class="sub">${fmtTime(s.at)} · ${s.items.map(i=>`${i.qty}× ${esc(i.name)}`).join(', ')}</div></div><div class="qty">${money(s.total)}</div></div>`}));const moves=state.movements.filter(m=>m.type!=='sale').map(m=>({at:m.at,html:`<div class="row"><div class="meta"><div class="name">${moveLabel(m.type)} · ${esc(m.name)}</div><div class="sub">${fmtTime(m.at)}</div></div><div class="qty ${m.qty<0?'low':''}">${m.qty>0?'+':''}${m.qty||''}</div></div>`}));const all=[...sales,...moves].sort((a,b)=>b.at-a.at).slice(0,60);historyList.innerHTML=all.length?all.map(x=>x.html).join(''):'<div class="empty">No activity yet.</div>'}
+    function moveLabel(t){return t==='stock_in'?'Stock in':t==='count_adjustment'?'Count adjustment':t==='add_product'?'Product added':t==='edit_product'?'Product edited':t}
+    function fmtTime(ms){return new Intl.DateTimeFormat('en-ZA',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'}).format(new Date(ms))}
+
+    async function startScanner(target='sale'){scanTarget=target;manualBarcode.value='';scanStatus.textContent='Starting camera…';openSheet('scanSheet');if(!navigator.mediaDevices?.getUserMedia){scanStatus.textContent='Camera scanning is not supported here. Type the barcode below.';return}try{scanStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'}}});scanVideo.srcObject=scanStream;await scanVideo.play();if('BarcodeDetector' in window){const detector=new BarcodeDetector({formats:['ean_13','ean_8','upc_a','upc_e','code_128']});scanStatus.textContent='Point the camera at the barcode.';const loop=async()=>{if(!scanStream)return;try{const codes=await detector.detect(scanVideo);if(codes[0]?.rawValue){handleBarcode(codes[0].rawValue);return}}catch{}scanTimer=setTimeout(loop,350)};loop()}else scanStatus.textContent='Live barcode detection is not supported in this browser. Type the barcode below.'}catch{scanStatus.textContent='Camera permission was not available. Type the barcode below.'}}
+    function stopScanner(){if(scanTimer)clearTimeout(scanTimer);scanTimer=null;if(scanStream){scanStream.getTracks().forEach(t=>t.stop());scanStream=null}scanVideo.srcObject=null}
+    function handleBarcode(code){code=String(code||'').trim();if(!code)return;stopScanner();closeSheet('scanSheet');if(scanTarget==='product'){pBarcode.value=code;toast('Barcode captured');return}const p=state.products.find(x=>x.barcode===code);if(p){addToBasket(p.id,1);toast(`${p.name} scanned`)}else{openProduct();pBarcode.value=code;productSheetTitle.textContent='New barcode product';toast('Barcode not found · add product details')}}
+    useBarcodeBtn.addEventListener('click',()=>handleBarcode(manualBarcode.value));scanBtn.addEventListener('click',()=>startScanner('sale'));scanIntoProductBtn.addEventListener('click',()=>startScanner('product'));
+
+    function renderAll(){renderHome();renderSaleProducts();renderBasket();renderProducts();renderStockInOptions();renderCount();renderHistory()}
+    function uid(){return 'id_'+Date.now().toString(36)+Math.random().toString(36).slice(2,7)}
+    saleSearch.addEventListener('input',renderSaleProducts);productSearch.addEventListener('input',renderProducts);document.querySelectorAll('.seg button').forEach(b=>b.addEventListener('click',()=>{document.querySelectorAll('.seg button').forEach(x=>x.classList.remove('active'));b.classList.add('active');saleFilter=b.dataset.filter;renderSaleProducts()}));
+    openBasketBtn.addEventListener('click',()=>openSheet('basketSheet'));reviewBasketBtn.addEventListener('click',()=>openSheet('basketSheet'));completeSaleBtn.addEventListener('click',completeSale);addProductBtn.addEventListener('click',()=>openProduct());openStockIn.addEventListener('click',()=>{renderStockInOptions();openSheet('stockInSheet')});siProduct.addEventListener('change',updateStockInHint);
+    resetDemoBtn.addEventListener('click',()=>{if(confirm('Reset TuckStock to the original demo data?')){state=demoState();save();toast('Demo reset')}});
+    if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}))}
+    renderAll();
+  </script>
+</body>
+</html>

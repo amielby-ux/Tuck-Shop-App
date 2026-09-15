@@ -132,8 +132,14 @@
   </div></div>
 
   <div class="sheet" id="stockInSheet"><div class="sheet-card"><div class="sheet-head"><h3>Stock In</h3><button class="close" data-close="stockInSheet">×</button></div>
-    <form id="stockInForm" class="form">
-      <div class="field"><label>Product</label><select id="siProduct"></select></div>
+    <div class="form" id="stockInChoice">
+      <div class="notice"><b>What are you adding?</b><br>Choose whether this product is already in your shop or is a brand-new stock item.</div>
+      <button class="btn gold full" type="button" id="existingStockBtn">📦 Existing Product</button>
+      <button class="btn dark full" type="button" id="newStockItemBtn">＋ New Product / Stock Item</button>
+    </div>
+    <form id="stockInForm" class="form" style="display:none">
+      <button class="btn dark" type="button" id="backStockChoiceBtn">← Back</button>
+      <div class="field"><label>Existing product</label><select id="siProduct"></select></div>
       <div class="field"><label id="siQtyLabel">Quantity added</label><input id="siQty" type="number" min="1" step="1" value="1" required /></div>
       <div class="notice" id="stockInHint">Use this when you receive stock or prepare items for sale today.</div>
       <button class="btn gold full" type="submit">Add to Stock</button>
@@ -191,6 +197,9 @@
     function pickEmoji(cat,type){const c=cat.toLowerCase();if(type==='prepared')return'🥯';if(c.includes('drink'))return'🥤';if(c.includes('sweet'))return'🍬';if(c.includes('bread')||c.includes('grocery'))return'🍞';return'📦'}
 
     function renderStockInOptions(){siProduct.innerHTML=state.products.map(p=>`<option value="${p.id}">${esc(p.name)} · ${p.qty} in stock</option>`).join('');updateStockInHint()}
+    function showStockInChoice(){stockInChoice.style.display='grid';stockInForm.style.display='none';siQty.value=1}
+    function showExistingStock(){stockInChoice.style.display='none';stockInForm.style.display='grid';renderStockInOptions()}
+    existingStockBtn.addEventListener('click',showExistingStock);backStockChoiceBtn.addEventListener('click',showStockInChoice);newStockItemBtn.addEventListener('click',()=>{closeSheet('stockInSheet');openProduct()});
     function updateStockInHint(){const p=state.products.find(x=>x.id===siProduct.value);if(!p)return;siQtyLabel.textContent=p.type==='prepared'?'Quantity made / prepared':'Quantity received';stockInHint.textContent=p.type==='prepared'?'Use this for today’s fresh batch. The quantity will be added to available stock.':'Use this when new stock arrives from a supplier.'}
     stockInForm.addEventListener('submit',e=>{e.preventDefault();const p=state.products.find(x=>x.id===siProduct.value);const q=parseInt(siQty.value);if(!p||!q||q<1)return;p.qty+=q;state.movements.unshift({id:uid(),type:'stock_in',productId:p.id,name:p.name,qty:q,at:Date.now()});save();closeSheet('stockInSheet');toast(`${q} ${p.name} added`)});
 
@@ -209,7 +218,7 @@
     function renderAll(){renderHome();renderSaleProducts();renderBasket();renderProducts();renderStockInOptions();renderCount();renderHistory()}
     function uid(){return 'id_'+Date.now().toString(36)+Math.random().toString(36).slice(2,7)}
     saleSearch.addEventListener('input',renderSaleProducts);productSearch.addEventListener('input',renderProducts);document.querySelectorAll('.seg button').forEach(b=>b.addEventListener('click',()=>{document.querySelectorAll('.seg button').forEach(x=>x.classList.remove('active'));b.classList.add('active');saleFilter=b.dataset.filter;renderSaleProducts()}));
-    openBasketBtn.addEventListener('click',()=>openSheet('basketSheet'));reviewBasketBtn.addEventListener('click',()=>openSheet('basketSheet'));completeSaleBtn.addEventListener('click',completeSale);addProductBtn.addEventListener('click',()=>openProduct());openStockIn.addEventListener('click',()=>{renderStockInOptions();openSheet('stockInSheet')});siProduct.addEventListener('change',updateStockInHint);
+    openBasketBtn.addEventListener('click',()=>openSheet('basketSheet'));reviewBasketBtn.addEventListener('click',()=>openSheet('basketSheet'));completeSaleBtn.addEventListener('click',completeSale);addProductBtn.addEventListener('click',()=>openProduct());openStockIn.addEventListener('click',()=>{showStockInChoice();openSheet('stockInSheet')});siProduct.addEventListener('change',updateStockInHint);
     resetDemoBtn.addEventListener('click',()=>{if(confirm('Reset TuckStock to the original demo data?')){state=demoState();save();toast('Demo reset')}});
     if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}))}
     renderAll();

@@ -1,4 +1,4 @@
-# TuckStock V1
+# Skills-Connect Spaza-App V1
 
 Mobile-first tuckshop stock and sales tracker.
 

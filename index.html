@@ -306,7 +306,47 @@
     async function shareFile(file,title,text){try{if(navigator.canShare?.({files:[file]})&&navigator.share){await navigator.share({title,text,files:[file]});return true}if(navigator.share){await navigator.share({title,text});downloadFile(file);toast('Report text shared · file saved separately');return true}downloadFile(file);toast('Sharing unavailable · file saved instead');return false}catch(err){if(err?.name!=='AbortError')toast('Could not share · try Save Backup File');return false}}
     async function shareFullBackup(){const file=backupFile();await shareFile(file,'Spaza-App Backup','Skills-Connect Spaza-App full shop backup. Keep this file safe for restore.')}
     function reportFile(sh){const stamp=new Date(sh.endedAt).toISOString().slice(0,10);return new File([shiftReportText(sh)],`Skills-Connect-Spaza-App-Shift-${sh.worker.replace(/[^a-z0-9]+/gi,'-')}-${stamp}.txt`,{type:'text/plain'})}
-    async function shareShiftReport(sh){if(!sh){toast('No closed shift available');return}const file=reportFile(sh);await shareFile(file,`Spaza-App Shift — ${sh.worker}`,shiftReportText(sh))}
+    async function shareShiftReport(sh){
+      if(!sh){toast('No closed shift available');return}
+      const title=`Spaza-App Shift — ${sh.worker}`;
+      const text=shiftReportText(sh);
+      const file=reportFile(sh);
+      try{
+        // Shift reports are primarily human-readable. Sharing text directly works
+        // more reliably with WhatsApp/WhatsApp Business, email and SMS than
+        // combining a text attachment with a long share message.
+        if(navigator.share){
+          await navigator.share({title,text});
+          return;
+        }
+        if(navigator.clipboard?.writeText){
+          await navigator.clipboard.writeText(text);
+          toast('Share menu unavailable · report copied to clipboard');
+          return;
+        }
+        downloadFile(file);
+        toast('Share menu unavailable · report saved as a text file');
+      }catch(err){
+        if(err?.name==='AbortError')return;
+        // Some Android share targets reject long text. Fall back to a small
+        // text file, then clipboard, without affecting the working backup flow.
+        try{
+          if(navigator.canShare?.({files:[file]})&&navigator.share){
+            await navigator.share({title,files:[file]});
+            return;
+          }
+        }catch(e){if(e?.name==='AbortError')return}
+        try{
+          if(navigator.clipboard?.writeText){
+            await navigator.clipboard.writeText(text);
+            toast('Could not open Share · report copied to clipboard');
+            return;
+          }
+        }catch{}
+        downloadFile(file);
+        toast('Could not open Share · report saved as a text file');
+      }
+    }
     function restoreState(raw){if(!raw||typeof raw!=='object')throw new Error('Invalid backup');const d=(raw.app==='Skills-Connect Spaza-App'||raw.app==='TuckStock')&&raw.data?raw.data:raw;if(!Array.isArray(d.products)||!Array.isArray(d.sales)||!Array.isArray(d.movements))throw new Error('Not a Skills-Connect Spaza-App backup');d.otherBasket||=[];d.workers||=['Thando','Lwazi','Olwethu'];d.shifts||=[];d.creditPayments||=[];d.counts||=[];if(!('activeShift' in d))d.activeShift=null;return d}
     function renderHistory(){const sales=state.sales.map(s=>({at:s.at,html:`<div class="row"><div class="meta"><div class="name">${s.paymentMethod==='credit'?'Credit':'Sale'} · ${s.items.reduce((a,i)=>a+i.qty,0)} items</div><div class="sub">${fmtTime(s.at)} · ${esc(s.worker||'Unassigned')} · ${(s.paymentMethod||'cash').toUpperCase()}${s.customer?.name?' · '+esc(s.customer.name):''}<br>${s.items.map(i=>`${i.qty}× ${esc(i.name)}`).join(', ')}</div></div><div class="qty">${money(s.total)}</div></div>`}));const payments=state.creditPayments.map(p=>({at:p.at,html:`<div class="row"><div class="meta"><div class="name">Credit payment · ${esc(p.customer)}</div><div class="sub">${fmtTime(p.at)} · ${esc(p.worker||'')} · ${p.method.toUpperCase()}</div></div><div class="qty">${money(p.amount)}</div></div>`}));const shifts=state.shifts.map(sh=>({at:sh.endedAt,html:`<div class="row"><div class="meta"><div class="name">Shift closed · ${esc(sh.worker)}</div><div class="sub">${fmtTime(sh.endedAt)} · Expected ${money(sh.expectedCash)} · Counted ${money(sh.actualCash)}${sh.note?' · '+esc(sh.note):''}</div></div><div class="qty ${sh.cashDifference<0?'low':''}">${sh.cashDifference>=0?'+':''}${money(sh.cashDifference)}</div></div>`}));const moves=state.movements.filter(m=>m.type!=='sale').map(m=>({at:m.at,html:`<div class="row"><div class="meta"><div class="name">${moveLabel(m.type)} · ${esc(m.name)}</div><div class="sub">${fmtTime(m.at)}</div></div><div class="qty ${m.qty<0?'low':''}">${m.qty>0?'+':''}${m.qty||''}</div></div>`}));const all=[...sales,...payments,...shifts,...moves].sort((a,b)=>b.at-a.at).slice(0,80);historyList.innerHTML=all.length?all.map(x=>x.html).join(''):'<div class="empty">No activity yet.</div>'}
     function moveLabel(t){return t==='stock_in'?'Stock in':t==='count_adjustment'?'Count adjustment':t==='add_product'?'Product added':t==='edit_product'?'Product edited':t}

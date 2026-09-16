@@ -103,6 +103,7 @@
     <section id="count" class="screen">
       <div class="topbar"><div class="brand"><div class="logo">📋</div><div><h1>Stock Count</h1><p>Expected versus actual</p></div></div><button class="btn gold" id="saveCountBtn">Save count</button></div>
       <div class="notice">Enter what you physically count. Differences help reveal breakages, personal use, theft, or counting mistakes.</div>
+      <div id="countSummary" class="notice" style="display:none"></div>
       <div id="countList" class="list"></div>
     </section>
 
@@ -196,6 +197,7 @@
       <div class="notice"><b>What are you adding?</b><br>Choose whether this product is already in your shop or is a brand-new stock item.</div>
       <button class="btn gold full" type="button" id="existingStockBtn">📦 Existing Product</button>
       <button class="btn dark full" type="button" id="newStockItemBtn">＋ New Product / Stock Item</button>
+      <button class="btn dark full" type="button" id="photoStockItemBtn">📷 Take Picture / Identify Product</button>
     </div>
     <form id="stockInForm" class="form" style="display:none">
       <button class="btn dark" type="button" id="backStockChoiceBtn">← Back</button>
@@ -204,6 +206,17 @@
       <div class="notice" id="stockInHint">Use this when you receive stock or prepare items for sale today.</div>
       <button class="btn gold full" type="submit">Add to Stock</button>
     </form>
+  </div></div>
+
+  <div class="sheet" id="photoProductSheet"><div class="sheet-card"><div class="sheet-head"><h3>Identify Product</h3><button class="close" data-close="photoProductSheet">×</button></div>
+    <div class="form">
+      <div class="notice"><b>Photograph the front of the product.</b><br>Spaza-App will first look for a barcode in the photo. Online visual product recognition can be connected as the next service layer; if no barcode is found, you can continue immediately with the photo beside the manual product form.</div>
+      <input id="productPhotoInput" type="file" accept="image/*" capture="environment" style="display:none" />
+      <button class="btn gold full" type="button" id="takeProductPhotoBtn">📷 Take Product Picture</button>
+      <img id="productPhotoPreview" alt="Product preview" style="display:none;width:100%;max-height:280px;object-fit:contain;border-radius:14px;background:#111" />
+      <div class="notice" id="photoIdentifyStatus" style="display:none"></div>
+      <button class="btn dark full" type="button" id="photoManualBtn" style="display:none">Continue with Product Details</button>
+    </div>
   </div></div>
 
   <div class="sheet" id="scanSheet"><div class="sheet-card"><div class="sheet-head"><h3>Barcode Scanner</h3><button class="close" data-close="scanSheet">×</button></div>
@@ -285,11 +298,17 @@
     function showStockInChoice(){stockInChoice.style.display='grid';stockInForm.style.display='none';siQty.value=1}
     function showExistingStock(){stockInChoice.style.display='none';stockInForm.style.display='grid';renderStockInOptions()}
     existingStockBtn.addEventListener('click',showExistingStock);backStockChoiceBtn.addEventListener('click',showStockInChoice);newStockItemBtn.addEventListener('click',()=>{closeSheet('stockInSheet');openProduct()});
+    photoStockItemBtn.addEventListener('click',()=>{closeSheet('stockInSheet');productPhotoPreview.style.display='none';photoIdentifyStatus.style.display='none';photoManualBtn.style.display='none';productPhotoInput.value='';openSheet('photoProductSheet')});
+    takeProductPhotoBtn.addEventListener('click',()=>productPhotoInput.click());
+    productPhotoInput.addEventListener('change',async()=>{const file=productPhotoInput.files?.[0];if(!file)return;productPhotoPreview.src=URL.createObjectURL(file);productPhotoPreview.style.display='block';photoIdentifyStatus.style.display='block';photoIdentifyStatus.textContent='Checking the photo…';photoManualBtn.style.display='block';try{if('BarcodeDetector' in window){const detector=new BarcodeDetector({formats:['ean_13','ean_8','upc_a','upc_e','code_128']});const bitmap=await createImageBitmap(file);const codes=await detector.detect(bitmap);bitmap.close?.();const code=codes[0]?.rawValue;if(code){const known=state.products.find(p=>p.barcode===code);if(known){photoIdentifyStatus.innerHTML=`<b>Barcode found:</b> ${esc(code)}<br><b>Matched:</b> ${esc(known.name)}. Use Existing Product in Stock In to add quantity.`;return}photoIdentifyStatus.innerHTML=`<b>Barcode found:</b> ${esc(code)}<br>New product. Confirm the product details before saving.`;closeSheet('photoProductSheet');openProduct();pBarcode.value=code;productSheetTitle.textContent='Confirm New Product';return}}photoIdentifyStatus.innerHTML='<b>No readable barcode found.</b><br>Continue with Product Details. The photo-identification/web-search service requires an online vision/search connection and is not yet guessed locally.'}catch{photoIdentifyStatus.innerHTML='<b>Photo captured.</b><br>Automatic barcode reading was unavailable on this browser. Continue with Product Details.'}});
+    photoManualBtn.addEventListener('click',()=>{closeSheet('photoProductSheet');openProduct();productSheetTitle.textContent='Confirm Product Details'});
     function updateStockInHint(){const p=state.products.find(x=>x.id===siProduct.value);if(!p)return;siQtyLabel.textContent=p.type==='prepared'?'Quantity made / prepared':'Quantity received';stockInHint.textContent=p.type==='prepared'?'Use this for today’s fresh batch. The quantity will be added to available stock.':'Use this when new stock arrives from a supplier.'}
     stockInForm.addEventListener('submit',e=>{e.preventDefault();const p=state.products.find(x=>x.id===siProduct.value);const q=parseInt(siQty.value);if(!p||!q||q<1)return;p.qty+=q;state.movements.unshift({id:uid(),type:'stock_in',productId:p.id,name:p.name,qty:q,at:Date.now(),shiftId:state.activeShift?.id||null,worker:state.activeShift?.worker||null});save();closeSheet('stockInSheet');toast(`${q} ${p.name} added`)});
 
-    function renderCount(){countList.innerHTML=state.products.map(p=>`<div class="row"><div class="meta"><div class="name">${esc(p.name)}</div><div class="sub">Expected: ${p.qty}</div></div><input data-count="${p.id}" type="number" min="0" step="1" value="${p.qty}" style="width:86px;background:#1d1d1d;color:#fff;border:1px solid #2a2a2a;border-radius:12px;padding:10px;text-align:center" /></div>`).join('')}
-    saveCountBtn.addEventListener('click',()=>{const now=Date.now();let diffs=0;document.querySelectorAll('[data-count]').forEach(inp=>{const p=state.products.find(x=>x.id===inp.dataset.count);const actual=Math.max(0,parseInt(inp.value||0));const diff=actual-p.qty;if(diff!==0)diffs++;state.counts.unshift({id:uid(),productId:p.id,name:p.name,expected:p.qty,actual,diff,at:now,shiftId:state.activeShift?.id||null,worker:state.activeShift?.worker||null});if(diff!==0)state.movements.unshift({id:uid(),type:'count_adjustment',productId:p.id,name:p.name,qty:diff,at:now,shiftId:state.activeShift?.id||null,worker:state.activeShift?.worker||null});p.qty=actual});save();go('home');toast(diffs?`Count saved · ${diffs} difference${diffs===1?'':'s'}`:'Count saved · no differences')});
+    function countStatus(diff){return diff<0?`${Math.abs(diff)} SHORT`:diff>0?`${diff} OVER`:'Correct'}
+    function updateCountPreview(){let shortUnits=0,overUnits=0,shortValue=0,differences=0;document.querySelectorAll('[data-count]').forEach(inp=>{const p=state.products.find(x=>x.id===inp.dataset.count);if(!p)return;const actual=Math.max(0,parseInt(inp.value||0)),diff=actual-p.qty;const el=document.querySelector(`[data-count-diff="${p.id}"]`);if(el){el.textContent=diff===0?'✓ Correct':diff<0?`−${Math.abs(diff)} Short`:`+${diff} Over`;el.className='qty '+(diff<0?'low':'')}if(diff<0){shortUnits+=Math.abs(diff);shortValue+=Math.abs(diff)*(p.price||0);differences++}else if(diff>0){overUnits+=diff;differences++}});countSummary.style.display='block';countSummary.innerHTML=`<b>Live reconciliation</b><br>Short: ${shortUnits} unit(s) · Over: ${overUnits} unit(s) · Differences: ${differences}<br>Approx. retail value of shortages: <b>${money(shortValue)}</b>`}
+    function renderCount(){countList.innerHTML=state.products.map(p=>`<div class="row" style="align-items:center"><div class="meta"><div class="name">${esc(p.name)}</div><div class="sub">Expected: <b>${p.qty}</b> · Counted:</div></div><input data-count="${p.id}" type="number" min="0" step="1" value="${p.qty}" style="width:78px;background:#1d1d1d;color:#fff;border:1px solid #2a2a2a;border-radius:12px;padding:10px;text-align:center" /><div data-count-diff="${p.id}" class="qty" style="min-width:86px;text-align:right">✓ Correct</div></div>`).join('');document.querySelectorAll('[data-count]').forEach(i=>i.addEventListener('input',updateCountPreview));updateCountPreview()}
+    saveCountBtn.addEventListener('click',()=>{const now=Date.now();let diffs=0,shortUnits=0,overUnits=0,shortValue=0;document.querySelectorAll('[data-count]').forEach(inp=>{const p=state.products.find(x=>x.id===inp.dataset.count);const expected=p.qty,actual=Math.max(0,parseInt(inp.value||0)),diff=actual-expected;if(diff!==0)diffs++;if(diff<0){shortUnits+=Math.abs(diff);shortValue+=Math.abs(diff)*(p.price||0)}else if(diff>0)overUnits+=diff;state.counts.unshift({id:uid(),productId:p.id,name:p.name,expected,actual,diff,status:countStatus(diff),retailVariance:diff*(p.price||0),at:now,shiftId:state.activeShift?.id||null,worker:state.activeShift?.worker||null});if(diff!==0)state.movements.unshift({id:uid(),type:'count_adjustment',productId:p.id,name:p.name,qty:diff,expected,actual,reason:'Stock count reconciliation',at:now,shiftId:state.activeShift?.id||null,worker:state.activeShift?.worker||null});p.qty=actual});save();go('home');toast(diffs?`Count saved · ${shortUnits} short, ${overUnits} over · shortage value ${money(shortValue)}`:'Count saved · no differences')});
 
     function safeDate(ms){return new Intl.DateTimeFormat('en-ZA',{dateStyle:'medium',timeStyle:'short'}).format(new Date(ms))}
     function shiftReportText(sh){
